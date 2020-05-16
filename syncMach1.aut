@@ -1,0 +1,25 @@
+.model coffe_machine_sync
+.inputs u v E
+.outputs Acc
+
+.mv u 2 make_Latte make_Cappuccino
+.mv v 2 ready_Latte ready_Cappuccino
+.mv E 4 E0 E1 E2 E3
+.mv CS, NS 3 b b_b_0 b_b_1
+
+
+.latch NS CS
+.reset CS
+b
+
+.table CS -> Acc
+.default 0
+b 1
+
+.table u v E CS -> NS
+make_Latte - E2 b b_b_0 
+make_Cappuccino - E2 b b_b_1 
+- ready_Latte E1 b_b_0 b 
+- ready_Cappuccino E1 b_b_1 b 
+ 
+.end

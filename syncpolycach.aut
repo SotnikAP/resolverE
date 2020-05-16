@@ -1,0 +1,31 @@
+.model cache_sync
+.inputs n u m v E
+.outputs Acc
+
+.mv n 2 naa nbb
+.mv u 2 uaa ubb
+.mv m 2 maa mbb
+.mv v 2 vaa vbb
+.mv E 6 E0 E1 E2 E3 E4 E5
+.mv CS, NS 7 a b c a_b_0 a_c_0 b_a_0 c_a_0
+
+
+.latch NS CS
+.reset CS
+a
+
+.table CS -> Acc
+.default 0
+(a,b,c) 1
+
+.table n u m v E CS -> NS
+naa - - - E0 a a_b_0 
+nbb - - - E0 a a_c_0 
+- uaa - - E1 b b_a_0 
+- ubb - - E1 c c_a_0 
+- - maa - E2 a_b_0 b 
+- - mbb - E2 a_c_0 c 
+- - - vaa E3 b_a_0 a 
+- - - vbb E3 c_a_0 a 
+ 
+.end

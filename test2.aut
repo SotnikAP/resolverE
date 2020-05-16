@@ -1,0 +1,26 @@
+.model A2
+.inputs x u v y
+.outputs Acc
+.mv x 3 x1 x2 ^
+.mv u 3 u1 u2 ^
+.mv v 3 v1 v2 ^
+.mv y 3 y1 y2 ^
+.mv CS, NS 2 a b
+
+.latch NS CS
+.reset CS
+a
+
+.table CS -> Acc
+.default 1
+
+.table x u v y CS -> NS
+x2 ^ ^ y1 a a
+^ u2 ^ y2 a b
+x1 ^ v1 ^ a b
+^ u1 ^ y2 a a
+x1 ^ v2 ^ b b
+x2 ^ ^ y2 b b
+^ u1 ^ y1 b a
+^ u2 ^ y2 b a
+.end

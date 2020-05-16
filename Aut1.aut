@@ -1,0 +1,22 @@
+.model Aut1
+.inputs x v u y
+.outputs Acc
+.mv x 3 x fakeX ^
+.mv v 3 v fakeV ^
+.mv u 3 u1 u2 ^
+.mv y 3 y fakeY ^
+.mv CS, NS 2 1 2
+
+.latch NS CS
+.reset CS
+1
+
+.table CS -> Acc
+.default 1
+
+.table x v u y CS -> NS
+^ v ^ y 1 1
+x ^ u1 ^ 1 2
+x ^ u2 ^ 2 2
+^ v ^ y 2 1
+.end

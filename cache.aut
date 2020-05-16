@@ -1,0 +1,22 @@
+.model cache
+.inputs n u m v
+.outputs Acc
+.mv n 3 naa nbb ^
+.mv u 3 uaa ubb ^
+.mv m 3 maa mbb ^
+.mv v 3 vaa vbb ^
+.mv CS, NS 3 a b c
+
+.latch NS CS
+.reset CS
+a
+
+.table CS -> Acc
+.default 1
+
+.table n u m v CS -> NS
+naa ^ maa ^ a b
+^ uaa ^ vaa b a
+nbb ^ mbb ^ a c
+^ ubb ^ mbb c a
+.end

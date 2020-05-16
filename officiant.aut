@@ -1,0 +1,23 @@
+.model officiant
+.inputs x v u y
+.outputs Acc
+.mv x 3 order_Latte order_Cappuccino ^
+.mv v 3 ready_Latte ready_Cappuccino ^
+.mv u 3 make_Latte make_Cappuccino ^
+.mv y 3 Latte_to_client Cappuccino_to_client ^
+.mv CS, NS 3 a b c
+make_Latte make_Cappuccino ^
+
+.latch NS CS
+.reset CS
+a
+
+.table CS -> Acc
+.default 1
+
+.table x v u y CS -> NS
+order_Latte ^ make_Latte ^ a b
+^ ready_Latte ^ Latte_to_client b a
+order_Cappuccino ^ make_Cappuccino ^ a c
+^ ready_Cappuccino ^ Cappuccino_to_client c a
+.end

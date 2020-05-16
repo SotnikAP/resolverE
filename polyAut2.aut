@@ -1,0 +1,29 @@
+.model Aut2
+.inputs i u v o E
+.outputs Acc
+
+.mv i 2 i fakeI
+.mv u 2 u1 u2
+.mv v 2 v fakeV
+.mv o 2 o fakeO
+.mv E 4 E0 E1 E2 E3
+.mv CS, NS 4 a a_a_0 a_a_1 a_a_2
+
+
+.latch NS CS
+.reset CS
+a
+
+.table CS -> Acc
+.default 0
+a 1
+
+.table i u v o E CS -> NS
+- u2 - - E1 a a_a_0 
+- - - o E3 a_a_0 a 
+i - - - E0 a a_a_1 
+- - - o E3 a_a_1 a 
+- u1 - - E1 a a_a_2 
+- - v - E2 a_a_2 a 
+
+.end

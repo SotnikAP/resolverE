@@ -1,0 +1,23 @@
+.model server_sync
+.inputs u v E
+.outputs Acc
+
+.mv u 2 request u1
+.mv v 2 response v1
+.mv E 4 E0 E1 E2 E3
+.mv CS, NS 2 b b_b_0
+
+
+.latch NS CS
+.reset CS
+b
+
+.table CS -> Acc
+.default 0
+b 1
+
+.table u v E CS -> NS
+request - E3 b b_b_0 
+- response E1 b_b_0 b 
+ 
+.end

@@ -1,0 +1,29 @@
+.model A1_sync
+.inputs v u E
+.outputs Acc
+
+.mv v 2 v1 v2
+.mv u 2 u1 u2
+.mv E 4 E0 E1 E2 E3
+.mv CS, NS 6 one two one_one_0 one_two_0 two_two_0 two_one_0
+
+
+.latch NS CS
+.reset CS
+one
+
+.table CS -> Acc
+.default 0
+(one,two) 1
+
+.table v u E CS -> NS
+v2 - E3 one one_one_0 
+v1 - E3 one one_two_0 
+v1 - E3 two two_two_0 
+v2 - E3 two two_one_0 
+- u1 E1 one_one_0 one 
+- u1 E1 one_two_0 two 
+- u1 E1 two_two_0 two 
+- u1 E1 two_one_0 one 
+ 
+.end

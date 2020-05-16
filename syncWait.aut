@@ -1,0 +1,31 @@
+.model officiant_sync
+.inputs x v u y E
+.outputs Acc
+
+.mv x 2 order_Latte order_Cappuccino
+.mv v 2 ready_Latte ready_Cappuccino
+.mv u 2 make_Latte make_Cappuccino
+.mv y 2 Latte_to_client Cappuccino_to_client
+.mv E 4 E0 E1 E2 E3
+.mv CS, NS 7 a b c a_b_0 a_c_0 b_a_0 c_a_0
+
+
+.latch NS CS
+.reset CS
+a
+
+.table CS -> Acc
+.default 0
+(a,b,c) 1
+
+.table x v u y E CS -> NS
+order_Latte - - - E0 a a_b_0 
+order_Cappuccino - - - E0 a a_c_0 
+- ready_Latte - - E1 b b_a_0 
+- ready_Cappuccino - - E1 c c_a_0 
+- - make_Latte - E2 a_b_0 b 
+- - make_Cappuccino - E2 a_c_0 c 
+- - - Latte_to_client E3 b_a_0 a 
+- - - Cappuccino_to_client E3 c_a_0 a 
+ 
+.end

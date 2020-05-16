@@ -1,0 +1,17 @@
+.model server
+.inputs u v
+.outputs Acc
+.mv u 3 request u1 ^
+.mv v 3 response v1 ^
+.mv CS, NS 1 b
+
+.latch NS CS
+.reset CS
+b
+
+.table CS -> Acc
+.default 1
+
+.table u v CS -> NS
+request response b b
+.end

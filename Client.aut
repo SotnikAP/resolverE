@@ -1,0 +1,20 @@
+.model client
+.inputs x v u y
+.outputs Acc
+.mv x 3 create_request x1 ^
+.mv v 3 response v1 ^
+.mv u 3 request u1 ^
+.mv y 3 complete_boot y1 ^
+.mv CS, NS 3 a b c
+
+.latch NS CS
+.reset CS
+a
+
+.table CS -> Acc
+.default 1
+
+.table x v u y CS -> NS
+create_request ^ request ^ a b
+^ response ^ complete_boot b c
+.end

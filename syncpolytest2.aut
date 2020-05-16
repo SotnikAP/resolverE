@@ -1,0 +1,39 @@
+.model A2_sync
+.inputs x u v y E
+.outputs Acc
+
+.mv x 2 x1 x2
+.mv u 2 u1 u2
+.mv v 2 v1 v2
+.mv y 2 y1 y2
+.mv E 4 E0 E1 E2 E3
+.mv CS, NS 10 a b a_a_0 a_a_1 a_b_0 a_b_1 b_b_0 b_b_1 b_a_0 b_a_1
+
+
+.latch NS CS
+.reset CS
+a
+
+.table CS -> Acc
+.default 0
+(a,b) 1
+
+.table x u v y E CS -> NS
+x2 - - - E0 a a_a_0 
+- u1 - - E1 a a_a_1 
+- u2 - - E1 a a_b_0 
+x1 - - - E0 a a_b_1 
+x2 - - - E0 b b_b_0 
+x1 - - - E0 b b_b_1 
+- u1 - - E1 b b_a_0 
+- u2 - - E1 b b_a_1 
+- - - y1 E2 a_a_0 a 
+- - - y2 E2 a_a_1 a 
+- - - y2 E2 a_b_0 b 
+- - v1 - E3 a_b_1 b 
+- - - y2 E2 b_b_0 b 
+- - v2 - E3 b_b_1 b 
+- - - y1 E2 b_a_0 a 
+- - - y2 E2 b_a_1 a 
+ 
+.end

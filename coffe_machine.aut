@@ -1,0 +1,18 @@
+.model coffe_machine
+.inputs u v
+.outputs Acc
+.mv v 3 ready_Latte ready_Cappuccino ^
+.mv u 3 make_Latte make_Cappuccino ^
+.mv CS, NS 1 b
+
+.latch NS CS
+.reset CS
+b
+
+.table CS -> Acc
+.default 1
+
+.table u v CS -> NS
+make_Latte ready_Latte b b
+make_Cappuccino ready_Cappuccino b b
+.end

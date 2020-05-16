@@ -1,0 +1,27 @@
+.model client_sync
+.inputs x v u y E
+.outputs Acc
+
+.mv x 2 create_request x1
+.mv v 2 response v1
+.mv u 2 request u1
+.mv y 2 complete_boot y1
+.mv E 4 E0 E1 E2 E3
+.mv CS, NS 5 a b c a_b_0 b_c_0
+
+
+.latch NS CS
+.reset CS
+a
+
+.table CS -> Acc
+.default 0
+(a,b,c) 1
+
+.table x v u y E CS -> NS
+create_request - - - E0 a a_b_0 
+- response - - E1 b b_c_0 
+- - request - E3 a_b_0 b 
+- - - complete_boot E2 b_c_0 c 
+ 
+.end

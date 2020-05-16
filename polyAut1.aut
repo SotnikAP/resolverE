@@ -1,0 +1,31 @@
+.model Aut1
+.inputs x v u y E
+.outputs Acc
+
+.mv x 2 x fakeX
+.mv v 2 v fakeV
+.mv u 2 u1 u2
+.mv y 2 y fakeY
+.mv E 4 E0 E1 E2 E3
+.mv CS, NS 6 1 2 1_1_0 1_2_0 2_2_0 2_1_0
+
+
+.latch NS CS
+.reset CS
+1
+
+.table CS -> Acc
+.default 0
+(1,2) 1
+
+.table x v u y E CS -> NS
+- v - - E1 1 1_1_0 
+- - - y E3 1_1_0 1 
+x - - - E0 1 1_2_0 
+- - u1 - E2 1_2_0 2 
+x - - - E0 2 2_2_0 
+- - u2 - E2 2_2_0 2 
+- v - - E1 2 2_1_0 
+- - - y E3 2_1_0 1 
+
+.end
