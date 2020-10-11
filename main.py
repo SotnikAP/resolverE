@@ -66,11 +66,30 @@ def make_balm_dictionarie(handle, canals_num):
             if symbol != "-":
                 true_symbol = symbol
 
-        if dict.get(E) != None:
-            if dict[E].count(true_symbol) == 0:
-                dict[E].append(true_symbol)
+        """Покрывает ситуацию, когда Балм объединяет два перехода по разным символам:
+        MAIL ^ ^ err s2 s2
+        DATA ^ ^ err s2 s2
+        В один перехрд (MAIL,DATA) ^ ^ err s2 s2
+        
+        Если символ содержит ( в начале и ) в конце - отрезаем скобки и пытаемся разделить на символы - split(',')
+        Если символов больше 1 (т.е. это реально объединение, а не название символа), то каждый символ пытаемся добавить в словарь
+        Иначе - это имя символа такое и пытаемся добавть его со скобками. Т.е. имя символа '(SYMBOL)'.
+        """
+        if true_symbol[0] == '(' and true_symbol[-1] == ')':
+            united_symbols = true_symbol[1:-1].split(',')
+            if len(united_symbols) > 1:
+                for symbol in united_symbols:
+                    if dict.get(E) != None:
+                        if dict[E].count(symbol) == 0:
+                            dict[E].append(symbol)
+                    else:
+                        dict.update({E: [symbol]})
         else:
-            dict.update({E:[true_symbol]})
+            if dict.get(E) != None:
+                if dict[E].count(true_symbol) == 0:
+                    dict[E].append(true_symbol)
+            else:
+                dict.update({E: [true_symbol]})
 
     return dict
     # ~for
@@ -135,7 +154,15 @@ def get_original_order(dict):
 
 # ~def
 
-def process_pre_product_support(line, ordered_channels):
+def get_channels_with_len(channels, channels_with_len):
+    channels_len = []
+    for channel in channels:
+        channels_len.append(channel + "(" + str(channels_with_len[channel]) + ")")
+
+    return channels_len
+# ~def
+
+def process_pre_product_support(line, ordered_channels, channels_with_len):
     words = line.split(" ")
     channels = words[3].split(",")
     E = ""
@@ -146,14 +173,48 @@ def process_pre_product_support(line, ordered_channels):
         else:
             E = channel
 
+
+
     if (len(channelsWithoutE) == len(ordered_channels)):
-        words[3] = ','.join(ordered_channels)
+        ordered_channels_with_len = get_channels_with_len(ordered_channels, channels_with_len)
+        words[3] = ','.join(ordered_channels_with_len)
 
     words[3] = words[3] + "," + E
     return ' '.join(words)
 # ~def
 
-def make_new_script(old_script, dict, ordered_channels):
+def add_alphabet_size_to_channels_in_support(line, channels_with_len):
+    words = line.split(" ")
+    channels = words[3].split(",")
+    E = channels[-1]
+    channels.remove( channels[-1] )
+    channels_with_size = get_channels_with_len(channels, channels_with_len)
+    words[3] = ",".join(channels_with_size)
+
+    words[3] = words[3] + "," + E
+
+    return ' '.join(words)
+# ~def
+
+"""
+Получает словарь вида {имя_канала : [алфавит]}
+Возвращает словарь вида {имя_канала : мощность_канала}
+"""
+def get_channel_size(channel_with_alph):
+    channel_with_len = {}
+    for key, value in channel_with_alph.items():
+        channel_with_len.update({key : len(value)})
+
+    return channel_with_len
+# ~def
+
+"""Редактирует сырой скрипт
+Args: old_script - старый скрипт
+      dict - словарь соответствия настоящего имени канала его E- каналу
+      ordered_channels - каналы бОльшего автомата в порядке, указаном в файле
+      channels_with_len_1/2 - словари каналов и их мощностей
+"""
+def make_new_script(old_script, dict, ordered_channels, channels_with_len):
     lines = [line.rstrip('\n') for line in old_script]
     # first expansion
     if lines[6] != '':
@@ -161,10 +222,11 @@ def make_new_script(old_script, dict, ordered_channels):
     # second expansion
     if lines[7] != '':
         lines[7] = process_expansion_restriction(lines[7], dict)
-    lines[8] = process_pre_product_support(lines[8], ordered_channels)
+    lines[8] = process_pre_product_support(lines[8], ordered_channels, channels_with_len)
     # Change original channels to balm channels in restriction
-    lines[10] = process_expansion_restriction(lines[10], dict)
-    lines[12] = process_write_para(lines[12], dict)
+    lines[11] = process_expansion_restriction(lines[11], dict)
+    lines[12] = add_alphabet_size_to_channels_in_support(lines[12], channels_with_len)
+    lines[13] = process_write_para(lines[13], dict)
     f = open("edited_script.sh", 'tw', encoding='utf-8')
 
     lineNum = 0
@@ -177,6 +239,79 @@ def make_new_script(old_script, dict, ordered_channels):
 
 
 
+def make_star(bigger_aut, extandable, original):
+    start_state = "start"
+    first_state = "first"
+    second_state = "second"
+    states_number = "3"
+
+    def make_new_states_line(symbols):
+        new_line = " ".join(symbols[:3])
+        states_line = " " + " ".join([states_number, start_state, first_state, second_state])
+        new_line += states_line + "\n"
+        return new_line
+    # ~def
+
+    file_object = open( "star.aut", "w+" )
+    bigger_aut.seek(0)
+
+    for line in bigger_aut:
+        if line.find("CS, NS") == -1:
+            file_object.write(line)
+        else:
+            new_line = make_new_states_line( line.split(" ") )
+            file_object.write(new_line)
+            break;
+
+    next_line_is_init_state = False
+    for line in bigger_aut:
+        if( not next_line_is_init_state ):
+            file_object.write(line)
+            if line.find(".reset") != -1:
+                next_line_is_init_state = True
+        else:
+            file_object.write(start_state + "\n")
+            break;
+
+    next_line_is_finish_state = False
+    for line in bigger_aut:
+        if( not next_line_is_finish_state ):
+            file_object.write(line)
+            if line.find(".default") != -1:
+                next_line_is_finish_state = True
+        else:
+            file_object.write(start_state + " 1" + "\n")
+            break;
+
+    for line in bigger_aut:
+        file_object.write(line)
+        if( line.find("CS -> NS") != -1 ):
+            break;
+
+    symbol1 = ""
+    symbol2 = ""
+    for key in original:
+        if extandable.count(original[key]) == 0:
+            if symbol2 == "":
+                symbol2 = original[key]
+            else:
+                symbol1 = original[key]
+        else:
+            continue
+
+    aplhabet_line = "- - - - "
+    first_line = aplhabet_line + extandable[0] + " " + start_state + " " + first_state + "\n"
+    middle_line_1 = aplhabet_line + symbol2 + " " + first_state + " " + second_state + "\n"
+    middle_line_2 = aplhabet_line + symbol1 + " " + second_state + " " + first_state + "\n"
+    last_line = aplhabet_line + extandable[1] + " " + first_state + " " + start_state + "\n"
+    file_object.write( first_line )
+    file_object.write( middle_line_1 )
+    file_object.write( middle_line_2 )
+    file_object.write( last_line )
+    file_object.write(".end")
+
+# ~def
+
 
 def main():
     print(len(sys.argv))
@@ -184,27 +319,27 @@ def main():
          #print("!!! Need 5 files: 1.aut poly1.aut 2.aut poly2.aut script.sh")
          #return
 
-    #handle_1 = open(sys.argv[1]) #open("polyMach1.aut", 'r')
-    #handle_poly_1 = open(sys.argv[2]) #open("syncMach.aut", 'r')
-    #handle_2 = open(sys.argv[3]) #open("polyWait1.aut", 'r')
-    #handle_poly_2 = open(sys.argv[4]) #open("syncWait.aut", 'r')
+    handle_poly_1 = open(sys.argv[1]) #open("polyMach1.aut", 'r')
+    handle_sync_1 = open(sys.argv[2]) #open("syncMach.aut", 'r')
+    handle_poly_2 = open(sys.argv[3]) #open("polyWait1.aut", 'r')
+    handle_sync_2 = open(sys.argv[4]) #open("syncWait.aut", 'r')
 
-    handle_1 = open("test.aut", 'r')
-    handle_poly_1 = open("syncpolytest.aut", 'r')
-    handle_2 = open("test2.aut", 'r')
-    handle_poly_2 = open("syncpolytest2.aut", 'r')
+    #handle_poly_1 = open("polyclient_SMTP.aut", 'r')
+    #handle_sync_1 = open("syncpolyclient_SMTP.aut", 'r')
+    #handle_poly_2 = open("polyserver_SMTP.aut", 'r')
+    #handle_sync_2 = open("syncpolyserver_SMTP.aut", 'r')
 
-    original_1 = make_original_dictionarie(handle_1)
+    original_1 = make_original_dictionarie(handle_poly_1)
     print("Original_1: ", original_1)
     ordered_channels_1 = get_original_order(original_1)
     print("Ordered_channels_1: ", ordered_channels_1)
-    original_2 = make_original_dictionarie(handle_2)
+    original_2 = make_original_dictionarie(handle_poly_2)
     print("Original_2: ", original_2)
     ordered_channels_2 = get_original_order(original_2)
     print("Ordered_channels_2: ", ordered_channels_2)
-    balm_1 = make_balm_dictionarie(handle_poly_1, len(original_1))
+    balm_1 = make_balm_dictionarie(handle_sync_1, len(original_1))
     print("Balm_1: ", balm_1)
-    balm_2 = make_balm_dictionarie(handle_poly_2, len(original_2))
+    balm_2 = make_balm_dictionarie(handle_sync_2, len(original_2))
     print("Balm_2: ", balm_2)
 
     original1 = make_originalBalm_dict(original_1, balm_1)
@@ -219,13 +354,23 @@ def main():
     extandable_channels = get_extendable_channels(balm_1, balm_2)
     print("Extendable: ", extandable_channels)
 
-    script = open("script-2-side.sh", "r") #open(sys.argv[5])#
+    script = open("script.sh", "r") #open(sys.argv[5])#
     ordered_channels = []
     if( len(ordered_channels_1) > len(ordered_channels_2)):
+        make_star( handle_sync_1, extandable_channels, original2 )
         ordered_channels = ordered_channels_1
     else:
+        make_star( handle_sync_2, extandable_channels, original1 )
         ordered_channels = ordered_channels_2
-    make_new_script(script, original, ordered_channels)
+
+    channels_with_len_1 = get_channel_size(original_1)
+    channels_with_len_2 = get_channel_size(original_2)
+    biggest = {}
+    if len(channels_with_len_1) > len(channels_with_len_2):
+        biggest = channels_with_len_1
+    else:
+        biggest = channels_with_len_2
+    make_new_script(script, original, ordered_channels, biggest)
 
 if __name__ == "__main__":
     main()
